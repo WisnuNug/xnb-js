@@ -5680,7 +5680,6 @@ var cropData = {
 	}
 };
 
-
 var farmAnimalData = {
 	"$DisplayName": "String",
 	"$House": "String",
