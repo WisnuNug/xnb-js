@@ -5662,7 +5662,7 @@ var cropData = {
 	"IsPaddyCrop": "Boolean",
 	"NeedsWatering": "Boolean",
 	"$PlantableLocationRules": ["StardewValley.GameData.PlantableRule"],
-	"HarvestItemId": "String",
+	"HarvestItemId": "Int32",
 	"HarvestMinStack": "Int32",
 	"HarvestMaxStack": "Int32",
 	"HarvestMaxIncreasePerFarmingLevel": "Single",
