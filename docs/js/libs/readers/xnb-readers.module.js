@@ -42,7 +42,7 @@ class BaseReader {
 		return this.constructor.parseTypeList();
 	}
 }
-class List extends BaseReader {
+class SeasonReader extends BaseReader {
     static isTypeOf(type) {
         switch (type) {
             case 'Microsoft.Xna.Framework.Content.List':
@@ -2443,4 +2443,4 @@ class Vector4Reader extends BaseReader {
 	}
 }
 
-export { ArrayReader, BaseReader, List, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
+export { ArrayReader, BaseReader, SeasonReader, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
