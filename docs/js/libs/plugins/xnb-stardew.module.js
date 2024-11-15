@@ -435,7 +435,6 @@ class ListReader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
 			case 'Microsoft.Xna.Framework.Content.ListReader':
-				case 'Microsoft.Xna.Framework.Content.List':
 			case 'System.Collections.Generic.List':
 				return true;
 			default:
