@@ -431,61 +431,11 @@ class Int32Reader extends BaseReader {
 		buffer.writeInt32(content);
 	}
 }
-class SeasonReader extends BaseReader {
-    static isTypeOf(type) {
-        switch (type) {
-            case 'Microsoft.Xna.Framework.Content.List':
-			case 'StardewValley.Season':
-		case 'StardewValley.GameData':
-            case 'System.Collections.Generic.List':
-                return true;
-            default:
-                return false;
-        }
-    }
-    static hasSubType() {
-        return true;
-    }
-    constructor(reader) {
-        super();
-        this.reader = reader; // Pastikan ini adalah StringReader
-    }
-    read(buffer, resolver) {
-        const uint32Reader = new UInt32Reader();
-        const size = uint32Reader.read(buffer); // Membaca ukuran daftar
-        const list = [];
-        for (let i = 0; i < size; i++) {
-            // Menggunakan StringReader untuk membaca elemen daftar
-            const value = this.reader.read(buffer);
-            list.push(value);
-        }
-        return list;
-    }
-    write(buffer, content, resolver) {
-        this.writeIndex(buffer, resolver);
-        const uint32Reader = new UInt32Reader();
-        uint32Reader.write(buffer, content.length, null); // Menulis ukuran daftar
-        for (let data of content) {
-            // Menulis setiap string menggunakan StringReader
-            this.reader.write(buffer, data, null);
-        }
-    }
-    isValueType() {
-        return false;
-    }
-    get type() {
-        return "List<".concat(this.reader.type, ">"); // Menggunakan tipe String
-    }
-    parseTypeList() {
-        const inBlock = this.reader.parseTypeList();
-        return ["".concat(this.type, ":").concat(inBlock.length), ...inBlock];
-    }
-}
-
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
 			case 'Microsoft.Xna.Framework.Content.ListReader':
+				case 'Microsoft.Xna.Framework.Content.List':
 			case 'System.Collections.Generic.List':
 				return true;
 			default:
