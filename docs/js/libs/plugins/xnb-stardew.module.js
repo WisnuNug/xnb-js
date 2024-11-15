@@ -435,6 +435,8 @@ class SeasonReader extends BaseReader {
     static isTypeOf(type) {
         switch (type) {
             case 'Microsoft.Xna.Framework.Content.List':
+			case 'StardewValley.Season':
+		case 'StardewValley.GameData':
             case 'System.Collections.Generic.List':
                 return true;
             default:
