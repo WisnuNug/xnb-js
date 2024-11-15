@@ -5655,7 +5655,7 @@ var characterSpouseRoomData = {
 };
 
 var cropData = {
-	"Seasons": ["String"],
+	"Seasons": ["Int32"],
 	"DaysInPhase": ["Int32"],
 	"RegrowDays": "Int32",
 	"IsRaised": "Boolean",
