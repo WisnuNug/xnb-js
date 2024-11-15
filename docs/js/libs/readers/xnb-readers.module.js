@@ -42,7 +42,57 @@ class BaseReader {
 		return this.constructor.parseTypeList();
 	}
 }
+class List extends BaseReader {
+    static isTypeOf(type) {
+        switch (type) {
+            case 'Microsoft.Xna.Framework.Content.List':
+            case 'System.Collections.Generic.List':
+                return true;
+            default:
+                return false;
+        }
+    }
+    static hasSubType() {
+        return true;
+    }
+    constructor(reader) {
+        super();
+        // Gunakan StringReader jika pembaca tidak disediakan
+        this.reader = reader || new StringReader();
+    }
+    read(buffer, resolver) {
+        // Membaca jumlah elemen dalam daftar
+        const uint32Reader = new UInt32Reader();
+        const size = uint32Reader.read(buffer);
 
+        const list = [];
+        for (let i = 0; i < size; i++) {
+            // Membaca setiap elemen string menggunakan StringReader
+            const value = this.reader.read(buffer);
+            list.push(value);
+        }
+        return list;
+    }
+    write(buffer, content, resolver) {
+        // Menulis jumlah elemen dalam daftar
+        const uint32Reader = new UInt32Reader();
+        uint32Reader.write(buffer, content.length);
+
+        for (let data of content) {
+            // Menulis setiap elemen string menggunakan StringReader
+            this.reader.write(buffer, data, resolver);
+        }
+    }
+    isValueType() {
+        return false;
+    }
+    get type() {
+        return "List<String>";
+    }
+    parseTypeList() {
+        return [`${this.type}:1`]; // Mengembalikan tipe daftar string
+    }
+}
 class UInt32Reader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
