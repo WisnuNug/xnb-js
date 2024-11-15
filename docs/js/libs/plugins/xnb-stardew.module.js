@@ -5655,7 +5655,7 @@ var characterSpouseRoomData = {
 };
 
 var cropData = {
-	"Seasons": ["Int32"],
+	"Seasons": ["String"],
 	"DaysInPhase": ["Int32"],
 	"RegrowDays": "Int32",
 	"IsRaised": "Boolean",
@@ -5667,7 +5667,7 @@ var cropData = {
 	"HarvestMaxStack": "Int32",
 	"HarvestMaxIncreasePerFarmingLevel": "Single",
 	"ExtraHarvestChance": "Double",
-	"HarvestMethod": "Int32",
+	"HarvestMethod": "String",
 	"HarvestMinQuality": "Int32",
 	"$HarvestMaxQuality": "Int32",
 	"$TintColors": ["String"],
