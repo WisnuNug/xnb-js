@@ -446,25 +446,30 @@ class List extends BaseReader {
     }
     constructor(reader) {
         super();
-        // Gunakan StringReader sebagai default jika tidak ada reader yang disediakan
+        // Gunakan StringReader jika pembaca tidak disediakan
         this.reader = reader || new StringReader();
     }
     read(buffer, resolver) {
+        // Membaca jumlah elemen dalam daftar
         const uint32Reader = new UInt32Reader();
-        const size = uint32Reader.read(buffer); // Membaca ukuran daftar
+        const size = uint32Reader.read(buffer);
+
         const list = [];
         for (let i = 0; i < size; i++) {
-            const value = this.reader.read(buffer); // Membaca elemen string
+            // Membaca setiap elemen string menggunakan StringReader
+            const value = this.reader.read(buffer);
             list.push(value);
         }
         return list;
     }
     write(buffer, content, resolver) {
-        this.writeIndex(buffer, resolver);
+        // Menulis jumlah elemen dalam daftar
         const uint32Reader = new UInt32Reader();
-        uint32Reader.write(buffer, content.length, null); // Menulis ukuran daftar
+        uint32Reader.write(buffer, content.length);
+
         for (let data of content) {
-            this.reader.write(buffer, data, resolver); // Menulis elemen string
+            // Menulis setiap elemen string menggunakan StringReader
+            this.reader.write(buffer, data, resolver);
         }
     }
     isValueType() {
@@ -474,7 +479,7 @@ class List extends BaseReader {
         return "List<String>";
     }
     parseTypeList() {
-        return [`${this.type}:1`]; // Menentukan tipe sebagai List<String> dengan 1 subtipe
+        return [`${this.type}:1`]; // Mengembalikan tipe daftar string
     }
 }
 
