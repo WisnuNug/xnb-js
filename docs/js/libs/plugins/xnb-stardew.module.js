@@ -431,6 +431,52 @@ class Int32Reader extends BaseReader {
 		buffer.writeInt32(content);
 	}
 }
+class List extends BaseReader {
+	static isTypeOf(type) {
+		switch (type) {
+			case 'Microsoft.Xna.Framework.Content.List':
+			case 'System.Collections.Generic.List':
+				return true;
+			default:
+				return false;
+		}
+	}
+	static hasSubType() {
+		return true;
+	}
+	constructor(reader) {
+		super();
+		this.reader = reader;
+	}
+	read(buffer, resolver) {
+		const uint32Reader = new UInt32Reader();
+		const size = uint32Reader.read(buffer);
+		const list = [];
+		for (let i = 0; i < size; i++) {
+			const value = this.reader.isValueType() ? this.reader.read(buffer) : resolver.read(buffer);
+			list.push(value);
+		}
+		return list;
+	}
+	write(buffer, content, resolver) {
+		this.writeIndex(buffer, resolver);
+		const uint32Reader = new UInt32Reader();
+		uint32Reader.write(buffer, content.length, null);
+		for (let data of content) {
+			this.reader.write(buffer, data, this.reader.isValueType() ? null : resolver);
+		}
+	}
+	isValueType() {
+		return false;
+	}
+	get type() {
+		return "List<".concat(this.reader.type, ">");
+	}
+	parseTypeList() {
+		const inBlock = this.reader.parseTypeList();
+		return ["".concat(this.type, ":").concat(inBlock.length), ...inBlock];
+	}
+}
 
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
