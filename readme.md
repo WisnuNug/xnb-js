@@ -9,7 +9,7 @@ Currently, xnb decompression has been fully implemented, and due to the absence 
 Based on LeonBlade's [XnbCli](https://github.com/LeonBlade/xnbcli), xnb.js is rewritten some code dedicated to node.js into universal code regardless of environment. All credits to [LeonBlade](https://github.com/LeonBlade/).
 
 ## Try this!
-Web XNB Previewer : https://lybell-art.github.io/xnb-js
+Web XNB Previewer : https://wisnunug.github.io/xnb-js/
 
 ## Install
 You can install xnb.js with npm, or download the library directly and upload it to your own web server or use the existing CDN without a build system.
