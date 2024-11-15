@@ -5667,7 +5667,7 @@ var cropData = {
 	"HarvestMaxStack": "Int32",
 	"HarvestMaxIncreasePerFarmingLevel": "Single",
 	"ExtraHarvestChance": "Double",
-	"HarvestMethod": "Int32",
+	"HarvestMethod": "String",
 	"HarvestMinQuality": "Int32",
 	"$HarvestMaxQuality": "Int32",
 	"$TintColors": ["String"],
