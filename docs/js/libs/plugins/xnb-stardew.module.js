@@ -431,7 +431,7 @@ class Int32Reader extends BaseReader {
 		buffer.writeInt32(content);
 	}
 }
-class List extends BaseReader {
+class SeasonReader extends BaseReader {
     static isTypeOf(type) {
         switch (type) {
             case 'Microsoft.Xna.Framework.Content.List':
