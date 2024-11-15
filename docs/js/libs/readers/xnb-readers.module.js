@@ -45,7 +45,9 @@ class BaseReader {
 class SeasonReader extends BaseReader {
     static isTypeOf(type) {
         switch (type) {
-            case 'Microsoft.Xna.Framework.Content.List':
+            case 'Microsoft.Xna.Framework.Content.ListReader':
+		case 'StardewValley.Season':
+		case 'StardewValley.GameData':
             case 'System.Collections.Generic.List':
                 return true;
             default:
@@ -57,40 +59,37 @@ class SeasonReader extends BaseReader {
     }
     constructor(reader) {
         super();
-        // Gunakan StringReader jika pembaca tidak disediakan
-        this.reader = reader || new StringReader();
+        this.reader = reader; // Pastikan ini adalah StringReader
     }
     read(buffer, resolver) {
-        // Membaca jumlah elemen dalam daftar
         const uint32Reader = new UInt32Reader();
-        const size = uint32Reader.read(buffer);
-
+        const size = uint32Reader.read(buffer); // Membaca ukuran daftar
         const list = [];
         for (let i = 0; i < size; i++) {
-            // Membaca setiap elemen string menggunakan StringReader
+            // Menggunakan StringReader untuk membaca elemen daftar
             const value = this.reader.read(buffer);
             list.push(value);
         }
         return list;
     }
     write(buffer, content, resolver) {
-        // Menulis jumlah elemen dalam daftar
+        this.writeIndex(buffer, resolver);
         const uint32Reader = new UInt32Reader();
-        uint32Reader.write(buffer, content.length);
-
+        uint32Reader.write(buffer, content.length, null); // Menulis ukuran daftar
         for (let data of content) {
-            // Menulis setiap elemen string menggunakan StringReader
-            this.reader.write(buffer, data, resolver);
+            // Menulis setiap string menggunakan StringReader
+            this.reader.write(buffer, data, null);
         }
     }
     isValueType() {
         return false;
     }
     get type() {
-        return "List<String>";
+        return "List<".concat(this.reader.type, ">"); // Menggunakan tipe String
     }
     parseTypeList() {
-        return [`${this.type}:1`]; // Mengembalikan tipe daftar string
+        const inBlock = this.reader.parseTypeList();
+        return ["".concat(this.type, ":").concat(inBlock.length), ...inBlock];
     }
 }
 class UInt32Reader extends BaseReader {
