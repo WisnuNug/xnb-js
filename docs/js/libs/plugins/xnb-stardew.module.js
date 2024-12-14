@@ -5399,7 +5399,6 @@ var buffAttributesData = {
 var buildingData = {
 	Name: "String",
 	Description: "String",
-	NameForGeneralType: "String",
 	Texture: "String",
 	$Skins: ["StardewValley.GameData.Buildings.BuildingSkin"],
 	DrawShadow: "Boolean",
