@@ -491,10 +491,8 @@ class ListReader extends BaseReader {
 		this.reader = reader;
 	}
 	read(buffer, resolver) {
-		const listReader = new ListReader(new StringReader());
-		const result = listReader.read(buffer, resolver);
-		const uint32Reader = new UInt32Reader();
-		const size = uint32Reader.read(buffer);
+		const stringReader = new StringReader();
+		const size = stringReader.read(buffer);
 		const list = [];
 		for (let i = 0; i < size; i++) {
 			const value = this.reader.isValueType() ? this.reader.read(buffer) : resolver.read(buffer);
@@ -504,8 +502,8 @@ class ListReader extends BaseReader {
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
-		const uint32Reader = new UInt32Reader();
-		uint32Reader.write(buffer, content.length, null);
+		const stringReader = new StringReader();
+		stringReader.write(buffer, content.length, null);
 		for (let data of content) {
 			this.reader.write(buffer, data, this.reader.isValueType() ? null : resolver);
 		}
