@@ -362,50 +362,85 @@ class Int32Reader extends BaseReader {
 
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
-		switch (type) {
-			case 'Microsoft.Xna.Framework.Content.ListReader':
-			case 'System.Collections.Generic.List':
-				return true;
-			default:
-				return false;
-		}
+		// Menggunakan pendekatan yang lebih efisien dengan array lookup
+		const supportedTypes = [
+			'Microsoft.Xna.Framework.Content.ListReader',
+			'System.Collections.Generic.List',
+		];
+		return supportedTypes.includes(type);
 	}
+
 	static hasSubType() {
 		return true;
 	}
+
 	constructor(reader) {
 		super();
+		if (!reader) {
+			throw new Error("A valid reader instance must be provided.");
+		}
 		this.reader = reader;
 	}
+
 	read(buffer, resolver) {
+		if (!buffer) {
+			throw new Error("Buffer is required to read data.");
+		}
+		if (!resolver) {
+			throw new Error("Resolver is required to read complex data types.");
+		}
+
 		const uint32Reader = new UInt32Reader();
 		const size = uint32Reader.read(buffer);
+		if (size < 0) {
+			throw new Error("Invalid list size encountered.");
+		}
+
 		const list = [];
 		for (let i = 0; i < size; i++) {
-			const value = this.reader.isValueType() ? this.reader.read(buffer) : resolver.read(buffer);
+			const value = this.reader.isValueType()
+				? this.reader.read(buffer)
+				: resolver.read(buffer);
 			list.push(value);
 		}
 		return list;
 	}
+
 	write(buffer, content, resolver) {
+		if (!buffer) {
+			throw new Error("Buffer is required to write data.");
+		}
+		if (!Array.isArray(content)) {
+			throw new Error("Content must be an array.");
+		}
+		if (!resolver) {
+			throw new Error("Resolver is required to write complex data types.");
+		}
+
 		this.writeIndex(buffer, resolver);
+
 		const uint32Reader = new UInt32Reader();
 		uint32Reader.write(buffer, content.length, null);
+
 		for (let data of content) {
 			this.reader.write(buffer, data, this.reader.isValueType() ? null : resolver);
 		}
 	}
+
 	isValueType() {
 		return false;
 	}
+
 	get type() {
-		return "List<".concat(this.reader.type, ">");
+		return `List<${this.reader.type}>`;
 	}
+
 	parseTypeList() {
 		const inBlock = this.reader.parseTypeList();
-		return ["".concat(this.type, ":").concat(inBlock.length), ...inBlock];
+		return [`${this.type}:${inBlock.length}`, ...inBlock];
 	}
 }
+
 
 class NullableReader extends BaseReader {
 	static isTypeOf(type) {
