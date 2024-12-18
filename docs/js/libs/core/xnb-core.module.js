@@ -1363,20 +1363,46 @@ class ReaderResolver {
 	constructor(readers) {
 		this.readers = readers;
 	}
+
 	read(buffer) {
+		// Membaca indeks reader dari buffer
 		let index = buffer.read7BitNumber() - 1;
-		if (this.readers[index] == null) throw new XnbError("Invalid reader index ".concat(index, " | pos: ").concat(buffer.bytePosition.toString(16)));
+
+		// Validasi indeks pembacaan
+		if (index < 0 || index >= this.readers.length) {
+			throw new XnbError(
+				`Invalid reader index ${index} | pos: ${buffer.bytePosition.toString(16)}`
+			);
+		}
+
+		// Memanggil reader yang sesuai
 		return this.readers[index].read(buffer, this);
 	}
+
 	write(buffer, content) {
-		this.readers[0].write(buffer, content, this);
-	}
-	getIndex(reader) {
-		for (let i = 0, len = this.readers.length; i < len; i++) {
-			if (reader.toString() === this.readers[i].toString()) return i;
+		// Pastikan ada setidaknya satu reader yang tersedia
+		if (this.readers.length === 0) {
+			throw new Error("No readers available to write data.");
 		}
+
+		// Pilih reader yang sesuai (misalnya berdasarkan tipe data dari `content`)
+		let writer = this.readers[0]; // Ini bisa diubah untuk mendukung logika dinamis
+		writer.write(buffer, content, this);
+	}
+
+	getIndex(reader) {
+		// Cari indeks reader berdasarkan representasi string
+		for (let i = 0, len = this.readers.length; i < len; i++) {
+			if (reader.toString() === this.readers[i].toString()) {
+				return i;
+			}
+		}
+
+		// Jika tidak ditemukan, lemparkan error atau kembalikan nilai default
+		throw new Error("Reader not found in resolver.");
 	}
 }
+
 
 class XnbData {
 	constructor(header, readers, content) {
