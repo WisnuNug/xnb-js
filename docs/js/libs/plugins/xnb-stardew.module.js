@@ -491,6 +491,8 @@ class ListReader extends BaseReader {
 		this.reader = reader;
 	}
 	read(buffer, resolver) {
+		const listReader = new ListReader(new StringReader());
+		const result = listReader.read(buffer, resolver);
 		const uint32Reader = new UInt32Reader();
 		const size = uint32Reader.read(buffer);
 		const list = [];
