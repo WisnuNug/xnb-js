@@ -491,20 +491,24 @@ class ListReader extends BaseReader {
 		this.reader = reader;
 	}
 	read(buffer, resolver) {
-		const stringReader = new StringReader();
-		const size = stringReader.read(buffer);
+		const uint32Reader = new UInt32Reader(); // Menggunakan UInt32 untuk membaca ukuran list
+		const size = uint32Reader.read(buffer);
 		const list = [];
 		for (let i = 0; i < size; i++) {
 			const value = this.reader.isValueType() ? this.reader.read(buffer) : resolver.read(buffer);
 			list.push(value);
 		}
-		return list;
+		// Gabungkan list menjadi string, dipisahkan dengan koma
+		return list.join(", ");
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
-		const stringReader = new StringReader();
-		stringReader.write(buffer, content.length, null);
-		for (let data of content) {
+
+		// Split string menjadi list berdasarkan pemisah koma
+		const list = content.split(",").map(item => item.trim());
+		const uint32Reader = new UInt32Reader();
+		uint32Reader.write(buffer, list.length, null);
+		for (let data of list) {
 			this.reader.write(buffer, data, this.reader.isValueType() ? null : resolver);
 		}
 	}
@@ -519,6 +523,7 @@ class ListReader extends BaseReader {
 		return [{ type: this.type, count: inBlock.length }, ...inBlock];
 	}
 }
+
 
 class NullableReader extends BaseReader {
 	static isTypeOf(type) {
