@@ -432,6 +432,53 @@ class Int32Reader extends BaseReader {
 	}
 }
 
+class EnumReader extends BaseReader {
+    constructor(enumType) {
+        super();
+        this.enumType = enumType; // Enum mapping object
+    }
+
+    static isTypeOf(type) {
+        switch (type) {
+            case 'Microsoft.Xna.Framework.Content.EnumReader':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    read(buffer) {
+        // Read the integer value
+        const intValue = buffer.readInt32();
+
+        // Convert integer to string using the enumType mapping
+        const enumValue = Object.entries(this.enumType).find(([key, value]) => value === intValue);
+
+        if (enumValue) {
+            return enumValue[0]; // Return the string name of the enum
+        } else {
+            throw new Error(`Unknown enum value: ${intValue}`);
+        }
+    }
+
+    write(buffer, content, resolver) {
+        this.writeIndex(buffer, resolver);
+
+        // Find the integer value corresponding to the string content
+        const intValue = this.enumType[content];
+        if (intValue !== undefined) {
+            buffer.writeInt32(intValue);
+        } else {
+            throw new Error(`Unknown enum name: ${content}`);
+        }
+    }
+
+    isValueType() {
+        return false;
+    }
+}
+
+
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
 		return ['Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List'].includes(type);
@@ -5649,7 +5696,7 @@ var characterSpouseRoomData = {
 };
 
 var cropData = {
-	"Seasons": ["String"],
+	"Seasons": ["Int32"],
 	"DaysInPhase": ["Int32"],
 	"RegrowDays": "Int32",
 	"IsRaised": "Boolean",
