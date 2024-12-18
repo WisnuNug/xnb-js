@@ -434,13 +434,7 @@ class Int32Reader extends BaseReader {
 
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
-		switch (type) {
-			case 'Microsoft.Xna.Framework.Content.ListReader':
-			case 'System.Collections.Generic.List':
-				return true;
-			default:
-				return false;
-		}
+		return ['Microsoft.Xna.Framework.Content.ListReader', 'System.Collections.Generic.List'].includes(type);
 	}
 	static hasSubType() {
 		return true;
@@ -471,11 +465,11 @@ class ListReader extends BaseReader {
 		return false;
 	}
 	get type() {
-		return "List<".concat(this.reader.type, ">");
+		return { listType: this.reader.type };
 	}
 	parseTypeList() {
 		const inBlock = this.reader.parseTypeList();
-		return ["".concat(this.type, ":").concat(inBlock.length), ...inBlock];
+		return [{ type: this.type, count: inBlock.length }, ...inBlock];
 	}
 }
 
@@ -5516,7 +5510,7 @@ var buildingSkin = {
 	$Condition: "String",
 	$BuildDays: "Int32",
 	$BuildCost: "Int32",
-	BuildMaterials: ["StardewValley.GameData.Buildings.BuildingMaterial"],
+	$BuildMaterials: ["StardewValley.GameData.Buildings.BuildingMaterial"],
 	ShowAsSeparateConstructionEntry: "Boolean",
 	$Metadata: {
 		"String": "String"
