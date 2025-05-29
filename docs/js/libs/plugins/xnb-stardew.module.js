@@ -415,8 +415,7 @@ class EffectReader extends BaseReader {
 class Int32Reader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
-			case 'Microsoft.Xna.Framework.Content.Int32Reader':
-			case 'Microsoft.Xna.Framework.Content.EnumReader':
+			case 'Microsoft.Xna.Framework.Content.Int32Reader': 
 			case 'System.Int32':
 				return true;
 			default:
@@ -544,21 +543,80 @@ class PointReader extends BaseReader {
 	}
 	read(buffer) {
 		const int32Reader = new Int32Reader();
-		const x = int32Reader.read(buffer);
-		const y = int32Reader.read(buffer);
-		return {
-			x,
-			y
-		};
+
+		const X = int32Reader.read(buffer);
+		const Y = int32Reader.read(buffer);
+
+		return { X, Y };
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const int32Reader = new Int32Reader();
-		int32Reader.write(buffer, content.x, null);
-		int32Reader.write(buffer, content.y, null);
+		int32Reader.write(buffer, content.X, null);
+		int32Reader.write(buffer, content.Y, null);
 	}
 }
+class EnumReader extends BaseReader {
 
+    static isTypeOf(type) {
+        switch (type) {
+            case 'Microsoft.Xna.Framework.Content.EnumReader':
+                return true;
+            default: return false;
+        }
+    }
+    constructor(name) {
+        super(); 
+        this.name = name;
+    }
+
+    isValueType() {
+        return true;
+    }
+
+    read(buffer) {
+        const intValue = buffer.readInt32();
+        const enumMap = enums[this.name];
+
+        // Jika ada peta enum, kembalikan stringnya
+        if (enumMap && enumMap[intValue] !== undefined) {
+            return enumMap[intValue];
+        }
+
+        // Jika tidak dikenal, kembalikan nilai int-nya saja
+        return intValue;
+    }
+
+    write(buffer, content, resolver) {
+        this.writeIndex(buffer, resolver);
+
+        const enumMap = enums[this.name];
+        let intValue = content;
+
+        // Jika content berupa string, cari nilai int-nya
+        if (enumMap && typeof content === 'string') {
+            const found = Object.entries(enumMap).find(([k, v]) => v === content);
+            if (found) {
+                intValue = parseInt(found[0]);
+            } else {
+                throw new Error(`Enum value "${content}" not found in ${this.name}`);
+            }
+        }
+
+        buffer.writeInt32(intValue);
+    }
+
+
+    toString() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    get type() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    
+}
 class ReflectiveReader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
@@ -605,24 +663,21 @@ class RectangleReader extends BaseReader {
 	}
 	read(buffer) {
 		const int32Reader = new Int32Reader();
-		const x = int32Reader.read(buffer);
-		const y = int32Reader.read(buffer);
-		const width = int32Reader.read(buffer);
-		const height = int32Reader.read(buffer);
-		return {
-			x,
-			y,
-			width,
-			height
-		};
+
+		const X = int32Reader.read(buffer);
+		const Y = int32Reader.read(buffer);
+		const Width = int32Reader.read(buffer);
+		const Height = int32Reader.read(buffer);
+
+		return { X, Y, Width, Height };
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const int32Reader = new Int32Reader();
-		int32Reader.write(buffer, content.x, null);
-		int32Reader.write(buffer, content.y, null);
-		int32Reader.write(buffer, content.width, null);
-		int32Reader.write(buffer, content.height, null);
+		int32Reader.write(buffer, content.X, null);
+		int32Reader.write(buffer, content.Y, null);
+		int32Reader.write(buffer, content.Width, null);
+		int32Reader.write(buffer, content.Height, null);
 	}
 }
 
@@ -637,7 +692,8 @@ class SingleReader extends BaseReader {
 		}
 	}
 	read(buffer) {
-		return buffer.readSingle();
+		const raw = buffer.readSingle();
+		return Math.round(raw * 1e6) / 1e6;  
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
@@ -3698,15 +3754,7 @@ class Texture2DReader extends BaseReader {
 		let usedHeight = null;
 		if (mipCount > 1) console.warn("Found mipcount of ".concat(mipCount, ", only the first will be used."));
 		let dataSize = uint32Reader.read(buffer);
-		if (width * height * 4 > dataSize) {
-			usedWidth = width >> 16 & 0xffff;
-			width = width & 0xffff;
-			usedHeight = height >> 16 & 0xffff;
-			height = height & 0xffff;
-			if (width * height * 4 !== dataSize) {
-				console.warn("invalid width & height! ".concat(width, " x ").concat(height));
-			}
-		}
+		 
 		let data = buffer.read(dataSize);
 		if (format == 4) data = decompress(data, width, height, flags.DXT1);else if (format == 5) data = decompress(data, width, height, flags.DXT3);else if (format == 6) data = decompress(data, width, height, flags.DXT5);else if (format == 2) {
 			data = convertFrom5551(data);
@@ -3775,21 +3823,20 @@ class Vector3Reader extends BaseReader {
 	}
 	read(buffer) {
 		const singleReader = new SingleReader();
-		let x = singleReader.read(buffer);
-		let y = singleReader.read(buffer);
-		let z = singleReader.read(buffer);
-		return {
-			x,
-			y,
-			z
-		};
+
+		let X = singleReader.read(buffer);
+		let Y = singleReader.read(buffer);
+		let Z = singleReader.read(buffer);
+
+		return { X, Y, Z };
 	}
+
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
-		singleReader.write(buffer, content.z, null);
+		singleReader.write(buffer, content.X, null);
+		singleReader.write(buffer, content.Y, null);
+		singleReader.write(buffer, content.Z, null);
 	}
 }
 
@@ -3970,18 +4017,33 @@ class Vector2Reader extends BaseReader {
 	}
 	read(buffer) {
 		const singleReader = new SingleReader();
+
 		let x = singleReader.read(buffer);
 		let y = singleReader.read(buffer);
-		return {
-			x,
-			y
-		};
+		 
+		return `${x}, ${y}`;
 	}
+
+
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
+
+		let x, y;
+
+		if (typeof content === 'string') {
+
+			const parts = content.split(',').map(s => parseFloat(s.trim()));
+			x = parts[0];
+			y = parts[1];
+		} else {
+
+			x = content.x;
+			y = content.y;
+		}
+
+		singleReader.write(buffer, x, null);
+		singleReader.write(buffer, y, null);
 	}
 }
 
@@ -3995,27 +4057,25 @@ class Vector4Reader extends BaseReader {
 				return false;
 		}
 	}
-	read(buffer) {
-		const singleReader = new SingleReader();
-		let x = singleReader.read(buffer);
-		let y = singleReader.read(buffer);
-		let z = singleReader.read(buffer);
-		let w = singleReader.read(buffer);
-		return {
-			x,
-			y,
-			z,
-			w
-		};
-	}
-	write(buffer, content, resolver) {
-		this.writeIndex(buffer, resolver);
-		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
-		singleReader.write(buffer, content.z, null);
-		singleReader.write(buffer, content.w, null);
-	}
+	 read(buffer) {
+        const singleReader = new SingleReader();
+
+        let X = singleReader.read(buffer);
+        let Y = singleReader.read(buffer);
+        let Z = singleReader.read(buffer);
+        let W = singleReader.read(buffer);
+
+        return { X, Y, Z, W };
+    }
+
+    write(buffer, content, resolver) {
+        this.writeIndex(buffer, resolver);
+        const singleReader = new SingleReader();
+        singleReader.write(buffer, content.X, null);
+        singleReader.write(buffer, content.Y, null);
+        singleReader.write(buffer, content.Z, null);
+        singleReader.write(buffer, content.W, null);
+    }
 }
 
 class MovieSceneReader extends BaseReader {
@@ -5167,16 +5227,14 @@ var genericSpawnItemData = {
 	Quality: "Int32",
 	$ObjectInternalName: "String",
 	$ObjectDisplayName: "String",
-	$ObjectColor: "String",
+	$ObjectColor : "String",
 	ToolUpgradeLevel: "Int32",
 	IsRecipe: "Boolean",
 	$StackModifiers: ["StardewValley.GameData.QuantityModifier"],
-	StackModifierMode: "Int32",
+	StackModifierMode: "StardewValley.GameData.QuantityModifier+QuantityModifierMode",  
 	$QualityModifiers: ["StardewValley.GameData.QuantityModifier"],
-	QualityModifierMode: "Int32",
-	$ModData: {
-		"String": "String"
-	},
+	QualityModifierMode: "StardewValley.GameData.QuantityModifier+QuantityModifierMode",  
+	$ModData: {"String": "String"},
 	$PerItemCondition: "String"
 };
 
@@ -5302,15 +5360,15 @@ var trinketData = {
 var plantableRule = {
 	Id: "String",
 	$Condition: "String",
-	PlantedIn: "Int32",
-	Result: "Int32",
+	PlantedIn: "StardewValley.GameData.PlantableRuleContext",
+	Result: "StardewValley.GameData.PlantableResult",
 	$DeniedMessage: "String"
 };
 
 var quantityModiier = {
 	Id: "String",
 	$Condition: "String",
-	Modification: "Int32",
+	Modification: "StardewValley.GameData.QuantityModifier+ModificationType",
 	Amount: "Single",
 	$RandomAmount: ["Single"]
 };
@@ -5398,6 +5456,7 @@ var buffAttributesData = {
 
 var buildingData = {
 	Name: "String",
+	$NameForGeneralType: "String",
 	Description: "String",
 	Texture: "String",
 	$Skins: ["StardewValley.GameData.Buildings.BuildingSkin"],
@@ -5436,12 +5495,8 @@ var buildingData = {
 	$IndoorItemMoves: ["StardewValley.GameData.Buildings.IndoorItemMove"],
 	$IndoorItems: ["StardewValley.GameData.Buildings.IndoorItemAdd"],
 	$AddMailOnBuild: ["String"],
-	$MetaData: {
-		"String": "String"
-	},
-	$ModData: {
-		"String": "String"
-	},
+	$MetaData: {"String": "String"},
+	$ModData: {"String": "String"},
 	HayCapacity: "Int32",
 	$Chests: ["StardewValley.GameData.Buildings.BuildingChest"],
 	$DefaultAction: "String",
@@ -5451,9 +5506,7 @@ var buildingData = {
 	$TileProperties: ["StardewValley.GameData.Buildings.BuildingTileProperty"],
 	$ItemConversions: ["StardewValley.GameData.Buildings.BuildingItemConversion"],
 	$DrawLayers: ["StardewValley.GameData.Buildings.BuildingDrawLayer"],
-	$CustomFields: {
-		"String": "String"
-	}
+	$CustomFields: {"String": "String"}
 };
 
 var buildingActionTile = {
@@ -5464,7 +5517,7 @@ var buildingActionTile = {
 
 var buildingChest = {
 	Id: "String",
-	Type: "Int32",
+	Type: "StardewValley.GameData.Buildings.BuildingChestType",
 	$Sound: "String",
 	$InvalidItemMessage: "String",
 	$InvalidItemMessageCondition: "String",
@@ -5549,20 +5602,20 @@ var indoorItemMove = {
 
 var characterData = {
 	"DisplayName": "String",
-	"$BirthSeason": "Int32",
+	"$BirthSeason": "StardewValley.Season",
 	"BirthDay": "Int32",
 	"$HomeRegion": "String",
-	"Language": "Int32",
-	"Gender": "Int32",
-	"Age": "Int32",
-	"Manner": "Int32",
-	"SocialAnxiety": "Int32",
-	"Optimism": "Int32",
+	"Language": "StardewValley.GameData.Characters.NpcLanguage",
+	"Gender": "StardewValley.Gender",
+	"Age": "StardewValley.GameData.Characters.NpcAge",
+	"Manner": "StardewValley.GameData.Characters.NpcManner",
+	"SocialAnxiety": "StardewValley.GameData.Characters.NpcSocialAnxiety",
+	"Optimism": "StardewValley.GameData.Characters.NpcOptimism",
 	"IsDarkSkinned": "Boolean",
 	"CanBeRomanced": "Boolean",
 	"$LoveInterest": "String",
-	"Calendar": "Int32",
-	"SocialTab": "Int32",
+	"Calendar": "StardewValley.GameData.Characters.CalendarBehavior",
+	"SocialTab": "StardewValley.GameData.Characters.SocialTabBehavior",
 	"$CanSocialize": "String",
 	"CanReceiveGifts": "Boolean",
 	"CanGreetNearbyCharacters": "Boolean",
@@ -5571,7 +5624,7 @@ var characterData = {
 	"$IntroductionsQuest": "Boolean",
 	"$ItemDeliveryQuests": "String",
 	"PerfectionScore": "Boolean",
-	"EndSlideShow": "Int32",
+	"EndSlideShow": "StardewValley.GameData.Characters.EndSlideShowBehavior",
 	"$SpouseAdopts": "String",
 	"$SpouseWantsChildren": "String",
 	"$SpouseGiftJealousy": "String",
@@ -5582,9 +5635,7 @@ var characterData = {
 	"$SpouseWallpapers": ["String"],
 	"DumpsterDiveFriendshipEffect": "Int32",
 	"$DumpsterDiveEmote": "Int32",
-	"$FriendsAndFamily": {
-		"String": "String"
-	},
+	"$FriendsAndFamily": {"String": "String"},
 	"$FlowerDanceCanDance": "Boolean",
 	"$WinterStarGifts": ["StardewValley.GameData.GenericSpawnItemDataWithCondition"],
 	"$WinterStarParticipant": "String",
@@ -5610,15 +5661,13 @@ var characterData = {
 	"HiddenProfileEmoteFrameDuration": "Single",
 	"$FormerCharacterNames": ["String"],
 	"FestivalVanillaActorIndex": "Int32",
-	"$CustomFields": {
-		"String": "String"
-	}
+	"$CustomFields": {"String": "String"}
 };
 
 var characterAppearanceData = {
 	"Id": "String",
 	"$Condition": "String",
-	"$Season": "Int32",
+	"$Season": "StardewValley.Season",
 	"Indoors": "Boolean",
 	"Outdoors": "Boolean",
 	"$Portrait": "String",
@@ -5655,7 +5704,7 @@ var characterSpouseRoomData = {
 };
 
 var cropData = {
-	"Seasons": ["Int32"],
+	"Seasons": ["StardewValley.Season"],
 	"DaysInPhase": ["Int32"],
 	"RegrowDays": "Int32",
 	"IsRaised": "Boolean",
@@ -5667,7 +5716,7 @@ var cropData = {
 	"HarvestMaxStack": "Int32",
 	"HarvestMaxIncreasePerFarmingLevel": "Single",
 	"ExtraHarvestChance": "Double",
-	"HarvestMethod": "Int32",
+	"HarvestMethod": "StardewValley.GameData.Crops.HarvestMethod",
 	"HarvestMinQuality": "Int32",
 	"$HarvestMaxQuality": "Int32",
 	"$TintColors": ["String"],
@@ -5675,15 +5724,13 @@ var cropData = {
 	"SpriteIndex": "Int32",
 	"CountForMonoculture": "Boolean",
 	"CountForPolyculture": "Boolean",
-	"$CustomFields": {
-		"String": "String"
-	}
+	"$CustomFields": {"String": "String"}
 };
 
 var farmAnimalData = {
 	"$DisplayName": "String",
 	"$House": "String",
-	"Gender": "Int32",
+	"Gender": "StardewValley.GameData.FarmAnimals.FarmAnimalGender",
 	"PurchasePrice": "Int32",
 	"SellPrice": "Int32",
 	"$ShopTexture": "String",
@@ -5701,10 +5748,14 @@ var farmAnimalData = {
 	"DaysToMature": "Int32",
 	"CanGetPregnant": "Boolean",
 	"DaysToProduce": "Int32",
-	"HarvestType": "Int32",
+	"HarvestType": "StardewValley.GameData.FarmAnimals.FarmAnimalHarvestType",
 	"$HarvestTool": "String",
-	"$ProduceItemIds": ["StardewValley.GameData.FarmAnimals.FarmAnimalProduce"],
-	"$DeluxeProduceItemIds": ["StardewValley.GameData.FarmAnimals.FarmAnimalProduce"],
+	"$ProduceItemIds": [
+		"StardewValley.GameData.FarmAnimals.FarmAnimalProduce"
+	],
+	"$DeluxeProduceItemIds": [
+		"StardewValley.GameData.FarmAnimals.FarmAnimalProduce"
+	],
 	"ProduceOnMature": "Boolean",
 	"FriendshipForFasterProduce": "Int32",
 	"DeluxeProduceMinimumFriendship": "Int32",
@@ -5726,7 +5777,9 @@ var farmAnimalData = {
 	"SleepFrame": "Int32",
 	"EmoteOffset": "Point",
 	"SwimOffset": "Point",
-	"$Skins": ["StardewValley.GameData.FarmAnimals.FarmAnimalSkin"],
+	"$Skins": [
+		"StardewValley.GameData.FarmAnimals.FarmAnimalSkin"
+	],
 	"$ShadowWhenBabySwims": "StardewValley.GameData.FarmAnimals.FarmAnimalShadowData",
 	"$ShadowWhenBaby": "StardewValley.GameData.FarmAnimals.FarmAnimalShadowData",
 	"$ShadowWhenAdultSwims": "StardewValley.GameData.FarmAnimals.FarmAnimalShadowData",
@@ -5740,11 +5793,11 @@ var farmAnimalData = {
 	"LeftRightPetHitboxTileSize": "Vector2",
 	"BabyUpDownPetHitboxTileSize": "Vector2",
 	"BabyLeftRightPetHitboxTileSize": "Vector2",
-	"$StatToIncrementOnProduce": ["StardewValley.GameData.StatIncrement"],
+	"$StatToIncrementOnProduce": [
+		"StardewValley.GameData.StatIncrement"
+	],
 	"ShowInSummitCredits": "Boolean",
-	"$CustomFields": {
-		"String": "String"
-	}
+	"$CustomFields": {"String": "String"}
 };
 
 var alternatePurchaseAnimals = {
@@ -5807,7 +5860,8 @@ var fishPondData = {
 
 var fishPondReward = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
 	RequiredPopulation: "Int32",
-	Chance: "Single"
+	Chance: "Single",
+	Precedence: "Int32"
 });
 
 var fishPondWaterColor = {
@@ -5829,15 +5883,15 @@ var floorPathData = {
 	"$RemovalSound": "String",
 	"RemovalDebrisType": "Int32",
 	"FootstepSound": "String",
-	"ConnectType": "Int32",
-	"ShadowType": "Int32",
+	"ConnectType": "StardewValley.GameData.FloorsAndPaths.FloorPathConnectType",
+	"ShadowType": "StardewValley.GameData.FloorsAndPaths.FloorPathShadowType",
 	"CornerSize": "Int32",
 	"FarmSpeedBuff": "Single"
 };
 
 var fruitTreeData = {
 	"DisplayName": "String",
-	"Seasons": ["Int32"],
+	"Seasons": ["StardewValley.Season"],
 	"Fruit": ["StardewValley.GameData.FruitTrees.FruitTreeFruitData"],
 	"Texture": "String",
 	"TextureSpriteRow": "Int32",
@@ -5848,7 +5902,7 @@ var fruitTreeData = {
 };
 
 var fruitTreeFruitData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
-	"$Season": "Int32",
+	"$Season": "StardewValley.Season",
 	"Chance": "Single"
 });
 
@@ -5965,7 +6019,7 @@ var locationData = {
 	"ChanceForClay": "Double",
 	"$Music": ["StardewValley.GameData.Locations.LocationMusicData"],
 	"$MusicDefault": "String",
-	"MusicContext": "Int32",
+	"MusicContext": "StardewValley.GameData.MusicContext",
 	"MusicIgnoredInRain": "Boolean",
 	"MusicIgnoredInSpring": "Boolean",
 	"MusicIgnoredInSummer": "Boolean",
@@ -6007,7 +6061,7 @@ var locationMusicData = {
 
 var spawnFishData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
 	"Chance": "Single",
-	"$Season": "Int32",
+	"$Season": "StardewValley.Season",
 	"$FishAreaId": "String",
 	"$BobberPosition": "Rectangle",
 	"$PlayerPosition": "Rectangle",
@@ -6027,14 +6081,14 @@ var spawnFishData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCo
 	"IgnoreFishDataRequirements": "Boolean",
 	"CanBeInherited": "Boolean",
 	"$ChanceModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"ChanceModifierMode": "Int32",
+	"ChanceModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
 	"ChanceBoostPerLuckLevel": "Single",
 	"UseFishCaughtSeededRandom": "Boolean"
 });
 
 var spawnForageData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
 	Chance: "Double",
-	$Season: "Int32"
+	$Season: "StardewValley.Season"
 });
 
 var lostItemData = {
@@ -6048,16 +6102,28 @@ var machineData = {
 	"HasInput": "Boolean",
 	"HasOutput": "Boolean",
 	"$InteractMethod": "String",
-	"$OutputRules": ["StardewValley.GameData.Machines.MachineOutputRule"],
-	"$AdditionalConsumedItems": ["StardewValley.GameData.Machines.MachineItemAdditionalConsumedItems"],
-	"$PreventTimePass": ["Int32"],
-	"$ReadyTimeModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"ReadyTimeModifierMode": "Int32",
+	"$OutputRules": [
+		"StardewValley.GameData.Machines.MachineOutputRule"
+	],
+	"$AdditionalConsumedItems": [
+		"StardewValley.GameData.Machines.MachineItemAdditionalConsumedItems"
+	],
+	"$PreventTimePass": [
+		"StardewValley.GameData.Machines.MachineTimeBlockers"
+	],
+	"$ReadyTimeModifiers": [
+		"StardewValley.GameData.QuantityModifier"
+	],
+	"ReadyTimeModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
 	"$InvalidItemMessage": "String",
 	"$InvalidItemMessageCondition": "String",
 	"$InvalidCountMessage": "String",
-	"$LoadEffects": ["StardewValley.GameData.Machines.MachineEffects"],
-	"$WorkingEffects": ["StardewValley.GameData.Machines.MachineEffects"],
+	"$LoadEffects": [
+		"StardewValley.GameData.Machines.MachineEffects"
+	],
+	"$WorkingEffects": [
+		"StardewValley.GameData.Machines.MachineEffects"
+	],
 	"WorkingEffectChance": "Single",
 	"AllowLoadWhenFull": "Boolean",
 	"WobbleWhileWorking": "Boolean",
@@ -6068,12 +6134,14 @@ var machineData = {
 	"IsIncubator": "Boolean",
 	"OnlyCompleteOvernight": "Boolean",
 	"$ClearContentsOvernightCondition": "String",
-	"$StatsToIncrementWhenLoaded": ["StardewValley.GameData.StatIncrement"],
-	"$StatsToIncrementWhenHarvested": ["StardewValley.GameData.StatIncrement"],
+	"$StatsToIncrementWhenLoaded": [
+		"StardewValley.GameData.StatIncrement"
+	],
+	"$StatsToIncrementWhenHarvested": [
+		"StardewValley.GameData.StatIncrement"
+	],
 	"$ExperienceGainOnHarvest": "String",
-	"$CustomFields": {
-		"String": "String"
-	}
+	"$CustomFields": {"String": "String"}
 };
 
 var machineEffects = {
@@ -6101,7 +6169,7 @@ var machineItemOutput = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWi
 	"$PreserveId": "String",
 	"IncrementMachineParentSheetIndex": "Int32",
 	"$PriceModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"PriceModifierMode": "Int32",
+	"PriceModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
 	"$CustomData": {
 		"String": "String"
 	}
@@ -6125,7 +6193,7 @@ var machineOutputRule = {
 
 var machineOutputTriggerRule = {
 	$Id: "String",
-	Trigger: "Int32",
+	Trigger: "StardewValley.GameData.Machines.MachineOutputTrigger",
 	$RequiredItemId: "String",
 	$RequiredTags: ["String"],
 	RequiredCount: "Int32",
@@ -6403,20 +6471,26 @@ var powerData = {
 
 var shopData = {
 	"Currency": "Int32",
-	"$StackSizeVisibility": "Int32",
+	"$StackSizeVisibility": "StardewValley.GameData.Shops.StackSizeVisibility",
 	"$OpenSound": "String",
 	"$PurchaseSound": "String",
 	"$PurchaseRepeatSound": "String",
 	"$ApplyProfitMargins": "Boolean",
-	"$PriceModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"PriceModifierMode": "Int32",
-	"$Owners": ["StardewValley.GameData.Shops.ShopOwnerData"],
-	"$VisualTheme": ["StardewValley.GameData.Shops.ShopThemeData"],
+	"$PriceModifiers": [
+		"StardewValley.GameData.QuantityModifier"
+	],
+	"PriceModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
+	"$Owners": [
+		"StardewValley.GameData.Shops.ShopOwnerData"
+	],
+	"$VisualTheme": [
+		"StardewValley.GameData.Shops.ShopThemeData"
+	],
 	"$SalableItemTags": ["String"],
-	"Items": ["StardewValley.GameData.Shops.ShopItemData"],
-	"$CustomFields": {
-		"String": "String"
-	}
+	"Items": [
+		"StardewValley.GameData.Shops.ShopItemData"
+	],
+	"$CustomFields": {"String": "String"}
 };
 
 var shopDialogueData = {
@@ -6427,23 +6501,25 @@ var shopDialogueData = {
 };
 
 var shopItemData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
-	"$TradeItemId": "String",
-	"TradeItemAmount": "Int32",
-	"Price": "Int32",
-	"$ApplyProfitMargins": "Boolean",
-	"AvailableStock": "Int32",
-	"AvailableStockLimit": "Int32",
-	"AvoidRepeat": "Boolean",
-	"UseObjectDataPrice": "Boolean",
-	"IgnoreShopPriceModifiers": "Boolean",
-	"$PriceModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"PriceModifierMode": "Int32",
-	"$AvailableStockModifiers": ["StardewValley.GameData.QuantityModifier"],
-	"AvailableStockModifierMode": "Int32",
-	"$ActionsOnPurchase": ["String"],
-	"$CustomFields": {
-		"String": "String"
-	}
+    "$TradeItemId": "String",
+    "TradeItemAmount": "Int32",
+    "Price": "Int32",
+    "$ApplyProfitMargins": "Boolean",
+    "AvailableStock": "Int32",
+    "AvailableStockLimit": "StardewValley.GameData.Shops.LimitedStockMode",
+    "AvoidRepeat": "Boolean",
+    "UseObjectDataPrice": "Boolean",
+    "IgnoreShopPriceModifiers": "Boolean",
+    "$PriceModifiers": [
+        "StardewValley.GameData.QuantityModifier"
+    ],
+    "PriceModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
+    "$AvailableStockModifiers": [
+        "StardewValley.GameData.QuantityModifier"
+    ],
+    "AvailableStockModifierMode": "StardewValley.GameData.QuantityModifier+QuantityModifierMode",
+    "$ActionsOnPurchase": ["String"],
+    "$CustomFields": { "String": "String" }
 });
 
 var shopOwnerData = {
@@ -6607,13 +6683,13 @@ var wildTreeData = {
 };
 
 var wildTreeItemData = _objectSpread2(_objectSpread2({}, genericSpawnItemDataWithCondition), {}, {
-	$Season: "Int32",
+	$Season: "StardewValley.Season",
 	Chance: "Single"
 });
 
 var wildTreeChopItemData = _objectSpread2(_objectSpread2({}, wildTreeItemData), {}, {
-	"$MinSize": "Int32",
-	"$MaxSize": "Int32",
+	"$MinSize": "StardewValley.GameData.WildTrees.WildTreeGrowthStage",
+	"$MaxSize": "StardewValley.GameData.WildTrees.WildTreeGrowthStage",
 	"$ForStump": "Boolean"
 });
 
@@ -6625,12 +6701,12 @@ var wildTreeTapItemData = _objectSpread2(_objectSpread2({}, wildTreeItemData), {
 	$PreviousItemId: ["String"],
 	DaysUntilReady: "Int32",
 	$DaysUntilReadyModifiers: ["StardewValley.GameData.QuantityModifier"],
-	DaysUntilReadyModifierMode: "Int32"
+	DaysUntilReadyModifierMode: "StardewValley.GameData.QuantityModifier+QuantityModifierMode"
 });
 
 var wildTreeTextureData = {
 	"$Condition": "String",
-	"$Season": "Int32",
+	"$Season": "StardewValley.Season",
 	"Texture": "String"
 };
 
@@ -6814,6 +6890,179 @@ const schemes = {
 	"System.Object": {}
 };
 
-var enums = ["StardewValley.GameData.QuantityModifier+ModificationType", "StardewValley.GameData.QuantityModifier+QuantityModifierMode", "StardewValley.GameData.MusicContext", "StardewValley.GameData.PlantableResult", "StardewValley.GameData.PlantableRuleContext", "StardewValley.GameData.Buildings.BuildingChestType", "StardewValley.Gender", "StardewValley.GameData.Characters.CalendarBehavior", "StardewValley.GameData.Characters.EndSlideShowBehavior", "StardewValley.GameData.Characters.NpcAge", "StardewValley.GameData.Characters.NpcLanguage", "StardewValley.GameData.Characters.NpcManner", "StardewValley.GameData.Characters.NpcOptimism", "StardewValley.GameData.Characters.NpcSocialAnxiety", "StardewValley.GameData.Characters.SocialTabBehavior", "StardewValley.Season", "StardewValley.GameData.Crops.HarvestMethod", "StardewValley.GameData.FloorsAndPaths.FloorPathConnectType", "StardewValley.GameData.FloorsAndPaths.FloorPathShadowType", "StardewValley.GameData.Machines.MachineOutputTrigger", "StardewValley.GameData.Machines.MachineTimeBlockers", "StardewValley.GameData.Pets.PetAnimationLoopMode", "StardewValley.GameData.Shops.LimitedStockMode", "StardewValley.GameData.Shops.ShopOwnerType", "StardewValley.GameData.Shops.StackSizeVisibility", "StardewValley.GameData.SpecialOrders.QuestDuration", "StardewValley.GameData.WildTrees.WildTreeGrowthStage"];
+var enums = {
+
+    "StardewValley.GameData.QuantityModifier+ModificationType": {
+        0: "Add",
+        1: "Subtract",
+        2: "Multiply",
+        3: "Divide",
+        4: "Set"
+    },
+    "StardewValley.GameData.QuantityModifier+QuantityModifierMode": {
+        0: "Stack",
+        1: "Minimum",
+        2: "Maximum"
+    },
+    "StardewValley.GameData.MusicContext": {
+        0: "Default",
+        1: "SubLocation",
+        2: "MusicPlayer",
+        3: "Event",
+        4: "MiniGame",
+        5: "ImportantSplitScreenMusic",
+        6: "MAX",
+    },
+    "StardewValley.GameData.PlantableResult": {
+        0: "Default",
+        1: "Allow",
+        2: "Deny"
+    },
+    "StardewValley.GameData.PlantableRuleContext": {
+        1: "Ground",
+        2: "GardenPot",
+        3: "Any"
+    },
+    "StardewValley.GameData.Buildings.BuildingChestType": {
+        0: "Chest",
+        1: "Collect",
+        2: "Load"
+    },
+    "StardewValley.Gender": {
+        0: "Male",
+        1: "Female",
+        2: "Undefined"
+    },
+    "StardewValley.GameData.Characters.CalendarBehavior": {
+        0: "AlwaysShown",
+        1: "HiddenUntilMet",
+        2: "HiddenAlways"
+    },
+    "StardewValley.GameData.Characters.EndSlideShowBehavior": {
+        0: "Hidden",
+        1: "MainGroup",
+        2: "TrailingGroup"
+    },
+    "StardewValley.GameData.Characters.NpcAge": {
+        0: "Adult",
+        1: "Teen",
+        2: "Child"
+    },
+    "StardewValley.GameData.Characters.NpcLanguage": {
+        0: "Default",
+        1: "Dwarvish"
+    },
+    "StardewValley.GameData.Characters.NpcManner": {
+        0: "Neutral",
+        1: "Polite",
+        2: "Rude"
+    },
+    "StardewValley.GameData.Characters.NpcOptimism": {
+        0: "Positive",
+        1: "Negative",
+        2: "Neutral"
+    },
+    "StardewValley.GameData.Characters.NpcSocialAnxiety": {
+        0: "Outgoing",
+        1: "Shy",
+        2: "Neutral"
+    },
+    "StardewValley.GameData.Characters.SocialTabBehavior": {
+        0: "UnknownUntilMet",
+        1: "AlwaysShown",
+        2: "HiddenUntilMet",
+        3: "HiddenAlways"
+    },
+    "StardewValley.Season": {
+        0: "Spring",
+        1: "Summer",
+        2: "Fall",
+        3: "Winter"
+    },
+    "StardewValley.GameData.Crops.HarvestMethod": {
+        0: "Grab",
+        1: "Scythe"
+    },
+    "StardewValley.GameData.FloorsAndPaths.FloorPathConnectType": {
+        0: "Default",
+        1: "Path",
+        2: "CornerDecorated",
+        3: "Random"
+    },
+    "StardewValley.GameData.FloorsAndPaths.FloorPathShadowType": {
+        0: "None",
+        1: "Square",
+        2: "Contoured"
+    },
+
+    "StardewValley.GameData.Machines.MachineOutputTrigger": {
+        0: "UnknownUntilMet",
+        1: "ItemPlacedInMachine",
+        2: "OutputCollected",
+        4: "MachinePutDown",
+        8: "DayUpdate"
+    },
+    "StardewValley.GameData.Machines.MachineTimeBlockers": {
+        0: "Outside",
+        1: "Inside",
+        2: "Spring",
+        3: "Summer",
+        4: "Fall",
+        5: "Winter",
+        6: "Sun",
+        7: "Rain",
+        8: "Always"
+    },
+
+   
+    "StardewValley.GameData.Pets.PetAnimationLoopMode": {
+        0: "None",
+        1: "Loop",
+        2: "Hold"
+    },
+    "StardewValley.GameData.Shops.LimitedStockMode": {
+        0: "Global",
+        1: "Player",
+        2: "None"
+    },
+    "StardewValley.GameData.Shops.ShopOwnerType": {
+        0: "NamedNpc",
+        1: "Any",
+        2: "AnyOrNone",
+        3: "None"
+    },
+    "StardewValley.GameData.Shops.StackSizeVisibility": {
+        0: "Hide",
+        1: "Show",
+        2: "ShowIfMultiple"
+    },
+
+    "StardewValley.GameData.SpecialOrders.QuestDuration": {
+        0: "Week",
+        1: "Month",
+        2: "TwoWeeks",
+        3: "TwoDays",
+        4: "ThreeDays",
+        5: "OneDay",
+    },
+
+    "StardewValley.GameData.WildTrees.WildTreeGrowthStage": {
+        0: "Seed",
+        1: "Sprout",
+        2: "Sapling",
+        3: "Bush",
+        5: "Tree",
+    },
+    "StardewValley.GameData.FarmAnimals.FarmAnimalHarvestType": {
+        0: "DropOvernight",
+        1: "HarvestWithTool",
+        2: "DigUp"
+    },
+    "StardewValley.GameData.FarmAnimals.FarmAnimalGender": {
+        0: "Female",
+        1: "Male",
+        2: "MaleOrFemale"
+    }
+};
 
 export { enums, readers, schemes };
