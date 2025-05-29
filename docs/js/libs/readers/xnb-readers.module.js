@@ -344,7 +344,6 @@ class Int32Reader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
 			case 'Microsoft.Xna.Framework.Content.Int32Reader':
-			case 'Microsoft.Xna.Framework.Content.EnumReader':
 			case 'System.Int32':
 				return true;
 			default:
@@ -358,6 +357,66 @@ class Int32Reader extends BaseReader {
 		this.writeIndex(buffer, resolver);
 		buffer.writeInt32(content);
 	}
+}
+
+class EnumReader extends BaseReader {
+
+    static isTypeOf(type) {
+        switch (type) {
+            case 'Microsoft.Xna.Framework.Content.EnumReader':
+                return true;
+            default: return false;
+        }
+    }
+    constructor(name) {
+        super(); 
+        this.name = name;
+    }
+
+    isValueType() {
+        return true;
+    }
+
+    read(buffer) {
+        const intValue = buffer.readInt32();
+        const enumMap = enums[this.name];
+
+        // Jika ada peta enum, kembalikan stringnya
+        if (enumMap && enumMap[intValue] !== undefined) {
+            return enumMap[intValue];
+        }
+
+        return intValue;
+    }
+
+    write(buffer, content, resolver) {
+        this.writeIndex(buffer, resolver);
+
+        const enumMap = enums[this.name];
+        let intValue = content;
+
+        if (enumMap && typeof content === 'string') {
+            const found = Object.entries(enumMap).find(([k, v]) => v === content);
+            if (found) {
+                intValue = parseInt(found[0]);
+            } else {
+                throw new Error(`Enum value "${content}" not found in ${this.name}`);
+            }
+        }
+
+        buffer.writeInt32(intValue);
+    }
+
+
+    toString() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    get type() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    
 }
 
 class ListReader extends BaseReader {
@@ -471,18 +530,19 @@ class PointReader extends BaseReader {
 	}
 	read(buffer) {
 		const int32Reader = new Int32Reader();
-		const x = int32Reader.read(buffer);
-		const y = int32Reader.read(buffer);
-		return {
-			x,
-			y
-		};
+
+		const X = int32Reader.read(buffer);
+		const Y = int32Reader.read(buffer);
+
+		return { X, Y };
 	}
+
+ 
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const int32Reader = new Int32Reader();
-		int32Reader.write(buffer, content.x, null);
-		int32Reader.write(buffer, content.y, null);
+		int32Reader.write(buffer, content.X, null);
+		int32Reader.write(buffer, content.Y, null);
 	}
 }
 
@@ -532,24 +592,20 @@ class RectangleReader extends BaseReader {
 	}
 	read(buffer) {
 		const int32Reader = new Int32Reader();
-		const x = int32Reader.read(buffer);
-		const y = int32Reader.read(buffer);
-		const width = int32Reader.read(buffer);
-		const height = int32Reader.read(buffer);
-		return {
-			x,
-			y,
-			width,
-			height
-		};
+		const X = int32Reader.read(buffer);
+		const Y = int32Reader.read(buffer);
+		const Width = int32Reader.read(buffer);
+		const Height = int32Reader.read(buffer);
+
+		return { X, Y, Width, Height };
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const int32Reader = new Int32Reader();
-		int32Reader.write(buffer, content.x, null);
-		int32Reader.write(buffer, content.y, null);
-		int32Reader.write(buffer, content.width, null);
-		int32Reader.write(buffer, content.height, null);
+		int32Reader.write(buffer, content.X, null);
+		int32Reader.write(buffer, content.Y, null);
+		int32Reader.write(buffer, content.Width, null);
+		int32Reader.write(buffer, content.Height, null);
 	}
 }
 
@@ -564,7 +620,8 @@ class SingleReader extends BaseReader {
 		}
 	}
 	read(buffer) {
-		return buffer.readSingle();
+		const raw = buffer.readSingle();
+		return Math.round(raw * 1e6) / 1e6;  
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
@@ -2073,15 +2130,7 @@ class Texture2DReader extends BaseReader {
 		let usedHeight = null;
 		if (mipCount > 1) console.warn("Found mipcount of ".concat(mipCount, ", only the first will be used."));
 		let dataSize = uint32Reader.read(buffer);
-		if (width * height * 4 > dataSize) {
-			usedWidth = width >> 16 & 0xffff;
-			width = width & 0xffff;
-			usedHeight = height >> 16 & 0xffff;
-			height = height & 0xffff;
-			if (width * height * 4 !== dataSize) {
-				console.warn("invalid width & height! ".concat(width, " x ").concat(height));
-			}
-		}
+		
 		let data = buffer.read(dataSize);
 		if (format == 4) data = decompress(data, width, height, flags.DXT1);else if (format == 5) data = decompress(data, width, height, flags.DXT3);else if (format == 6) data = decompress(data, width, height, flags.DXT5);else if (format == 2) {
 			data = convertFrom5551(data);
@@ -2150,21 +2199,17 @@ class Vector3Reader extends BaseReader {
 	}
 	read(buffer) {
 		const singleReader = new SingleReader();
-		let x = singleReader.read(buffer);
-		let y = singleReader.read(buffer);
-		let z = singleReader.read(buffer);
-		return {
-			x,
-			y,
-			z
-		};
+		let X = singleReader.read(buffer);
+		let Y = singleReader.read(buffer);
+		let Z = singleReader.read(buffer);
+		return { X, Y, Z };
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
-		singleReader.write(buffer, content.z, null);
+		singleReader.write(buffer, content.X, null);
+		singleReader.write(buffer, content.Y, null);
+		singleReader.write(buffer, content.Z, null);
 	}
 }
 
@@ -2345,18 +2390,31 @@ class Vector2Reader extends BaseReader {
 	}
 	read(buffer) {
 		const singleReader = new SingleReader();
+
 		let x = singleReader.read(buffer);
 		let y = singleReader.read(buffer);
-		return {
-			x,
-			y
-		};
+		 
+		return `${x}, ${y}`;
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
+
+		let x, y;
+
+		if (typeof content === 'string') {
+
+			const parts = content.split(',').map(s => parseFloat(s.trim()));
+			x = parts[0];
+			y = parts[1];
+		} else {
+
+			x = content.x;
+			y = content.y;
+		}
+
+		singleReader.write(buffer, x, null);
+		singleReader.write(buffer, y, null);
 	}
 }
 
@@ -2372,25 +2430,21 @@ class Vector4Reader extends BaseReader {
 	}
 	read(buffer) {
 		const singleReader = new SingleReader();
-		let x = singleReader.read(buffer);
-		let y = singleReader.read(buffer);
-		let z = singleReader.read(buffer);
-		let w = singleReader.read(buffer);
-		return {
-			x,
-			y,
-			z,
-			w
-		};
+		let X = singleReader.read(buffer);
+        let Y = singleReader.read(buffer);
+        let Z = singleReader.read(buffer);
+        let W = singleReader.read(buffer);
+
+        return { X, Y, Z, W };
 	}
 	write(buffer, content, resolver) {
 		this.writeIndex(buffer, resolver);
 		const singleReader = new SingleReader();
-		singleReader.write(buffer, content.x, null);
-		singleReader.write(buffer, content.y, null);
-		singleReader.write(buffer, content.z, null);
-		singleReader.write(buffer, content.w, null);
+		singleReader.write(buffer, content.X, null);
+        singleReader.write(buffer, content.Y, null);
+        singleReader.write(buffer, content.Z, null);
+        singleReader.write(buffer, content.W, null);
 	}
 }
 
-export { ArrayReader, BaseReader, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
+export { ArrayReader, BaseReader, EnumReader, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
