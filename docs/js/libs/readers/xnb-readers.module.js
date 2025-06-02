@@ -343,8 +343,7 @@ class EffectReader extends BaseReader {
 class Int32Reader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
-			case 'Microsoft.Xna.Framework.Content.Int32Reader':
-			case 'Microsoft.Xna.Framework.Content.EnumReader':
+			case 'Microsoft.Xna.Framework.Content.Int32Reader': 
 			case 'System.Int32':
 				return true;
 			default:
@@ -359,7 +358,64 @@ class Int32Reader extends BaseReader {
 		buffer.writeInt32(content);
 	}
 }
+class EnumReader extends BaseReader {
 
+    static isTypeOf(type) {
+        switch (type) {
+            case 'Microsoft.Xna.Framework.Content.EnumReader':
+                return true;
+            default: return false;
+        }
+    }
+    constructor(name) {
+        super(); 
+        this.name = name;
+    }
+
+    isValueType() {
+        return true;
+    }
+
+    read(buffer) {
+        const intValue = buffer.readInt32();
+        const enumMap = enums[this.name];
+
+        if (enumMap && enumMap[intValue] !== undefined) {
+            return enumMap[intValue];
+        }
+
+        return intValue;
+    }
+
+    write(buffer, content, resolver) {
+        this.writeIndex(buffer, resolver);
+
+        const enumMap = enums[this.name];
+        let intValue = content;
+
+        if (enumMap && typeof content === 'string') {
+            const found = Object.entries(enumMap).find(([k, v]) => v === content);
+            if (found) {
+                intValue = parseInt(found[0]);
+            } else {
+                throw new Error(`Enum value "${content}" not found in ${this.name}`);
+            }
+        }
+
+        buffer.writeInt32(intValue);
+    }
+
+
+    toString() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    get type() {
+        return `EnumReader<${this.name}>`;
+    }
+
+    
+}
 class ListReader extends BaseReader {
 	static isTypeOf(type) {
 		switch (type) {
@@ -2393,4 +2449,4 @@ class Vector4Reader extends BaseReader {
 	}
 }
 
-export { ArrayReader, BaseReader, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
+export { ArrayReader, BaseReader, BmFontReader, BooleanReader, CharReader, DictionaryReader, DoubleReader, EffectReader, Int32Reader, EnumReader, LightweightTexture2DReader, ListReader, NullableReader, PointReader, RectangleReader, ReflectiveReader, SingleReader, SpriteFontReader, StringReader, TBinReader, Texture2DReader, UInt32Reader, Vector2Reader, Vector3Reader, Vector4Reader };
