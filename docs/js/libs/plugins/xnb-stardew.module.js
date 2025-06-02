@@ -5711,7 +5711,7 @@ var characterSpouseRoomData = {
 };
 
 var cropData = {
-	"Seasons": ["Int32"],
+	"Seasons": ["StardewValley.Season"],
 	"DaysInPhase": ["Int32"],
 	"RegrowDays": "Int32",
 	"IsRaised": "Boolean",
