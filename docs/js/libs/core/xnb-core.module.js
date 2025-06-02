@@ -228,7 +228,7 @@ class TypeReader {
 }
 _defineProperty(TypeReader, "readers", {});
 _defineProperty(TypeReader, "schemes", {});
-_defineProperty(TypeReader, "enumList", new Set());
+_defineProperty(TypeReader, "enumList", {});
 function makeReflectiveReader(className) {
 	if (!TypeReader.schemes.hasOwnProperty(className)) throw new XnbError("Unsupported scheme : ".concat(className));
 	let scheme = TypeReader.schemes[className];
