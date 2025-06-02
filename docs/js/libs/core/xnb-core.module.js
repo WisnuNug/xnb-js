@@ -182,7 +182,7 @@ class TypeReader {
 			if (result !== null) return result;
 		}
 		if (TypeReader.schemes.hasOwnProperty(simple)) return "ReflectiveScheme<".concat(simple, ">");
-		if (TypeReader.enumList.has(simple)) return "Int32";
+		if (TypeReader.enumList.has(simple)) return simple;
 		throw new XnbError("Non-implemented type found, cannot resolve type \"".concat(simple, "\", \"").concat(type, "\"."));
 	}
 	static parseSubtypes(type) {
@@ -214,6 +214,7 @@ class TypeReader {
 		subtypes = subtypes.map(TypeReader.getReader.bind(TypeReader));
 		if (TypeReader.readers.hasOwnProperty("".concat(type, "Reader"))) return new TypeReader.readers["".concat(type, "Reader")](...subtypes);
 		if (TypeReader.schemes.hasOwnProperty(type)) return makeReflectiveReader(type);
+		if (TypeReader.enumList.hasOwnProperty(type)) return makeEnumReader(type);
 		throw new XnbError("Invalid reader type \"".concat(typeString, "\" passed, unable to resolve!"));
 	}
 	static getReaderClass(typeString) {
@@ -236,6 +237,11 @@ function makeReflectiveReader(className) {
 		TypeReader.schemes[className] = scheme;
 	}
 	return new ReflectiveSchemeReader(className, scheme);
+}
+function makeEnumReader(enumName) {
+	if (!TypeReader.enumList.hasOwnProperty(enumName)) throw new XnbError(`Unsupported enum type: ${enumName}`);
+	const EnumReader = TypeReader.getReaderClass("EnumReader");
+	return new EnumReader(enumName);
 }
 function convertSchemeEntryToReader(scheme) {
 	if (typeof scheme === "string") return TypeReader.getReader(scheme);
